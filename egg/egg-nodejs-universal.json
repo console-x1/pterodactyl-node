@@ -1,0 +1,104 @@
+{
+  "_comment": "Node.js Universal Egg v1.1 - TEST",
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": null
+  },
+  "exported_at": "2026-08-24T00:00:00+02:00",
+  "name": "NodeJS Universal v1.1 TEST",
+  "author": "consolex1@consolex1.com",
+  "description": "Universal Node.js egg for Node.js 20, 22 and 26. Dependencies are installed during server installation, never at startup. Supports npm, pnpm and Yarn.",
+  "features": [],
+  "docker_images": {
+    "Node.js 20 TEST": "ghcr.io/console-x1/pterodactyl-node:20-test",
+    "Node.js 22 TEST": "ghcr.io/console-x1/pterodactyl-node:22-test",
+    "Node.js 26 TEST": "ghcr.io/console-x1/pterodactyl-node:26-test"
+  },
+  "file_denylist": [],
+  "startup": "{{STARTUP_CMD}}",
+  "config": {
+    "files": "{}",
+    "startup": "{\"done\":[],\"userInteraction\":[]}",
+    "logs": "{\"custom\":false,\"location\":\"logs/latest.log\"}",
+    "stop": "^C"
+  },
+  "scripts": {
+    "installation": {
+      "script": "#!/bin/bash\nset -Eeuo pipefail\n\nSERVER_DIR=\"/mnt/server\"\n\nlog() {\n    echo \"[NodeJS] $*\"\n}\n\nfail() {\n    echo\n    echo \"[NodeJS] ERROR: $*\" >&2\n    exit 1\n}\n\ntrap 'fail \"Installation failed at line $LINENO.\"' ERR\n\ncd \"$SERVER_DIR\"\n\necho\necho \"========================================\"\necho \" Node.js Universal Installer v1.1\"\necho \"========================================\"\necho\n\nif [[ \"${USER_UPLOAD:-0}\" == \"1\" || \"${USER_UPLOAD:-0}\" == \"true\" ]]; then\n    log \"User upload mode enabled.\"\n    log \"Skipping Git and dependency installation.\"\n    exit 0\nfi\n\nif [[ -n \"${GIT_ADDRESS:-}\" ]]; then\n    REPO_URL=\"${GIT_ADDRESS}\"\n\n    if [[ \"$REPO_URL\" != *.git ]]; then\n        REPO_URL=\"${REPO_URL}.git\"\n    fi\n\n    if [[ -n \"${GIT_USERNAME:-}\" && -n \"${GIT_TOKEN:-}\" ]]; then\n        REPO_HOST=\"$(printf '%s' \"$REPO_URL\" | sed -E 's#^https?://##')\"\n        REPO_URL=\"https://${GIT_USERNAME}:${GIT_TOKEN}@${REPO_HOST}\"\n    fi\n\n    if [[ -d \".git\" ]]; then\n        log \"Git repository detected.\"\n\n        if [[ \"${AUTO_UPDATE:-0}\" == \"1\" || \"${AUTO_UPDATE:-0}\" == \"true\" ]]; then\n            log \"Updating repository...\"\n            git fetch --all --prune\n\n            if [[ -n \"${BRANCH:-}\" ]]; then\n                git checkout \"$BRANCH\"\n                git pull origin \"$BRANCH\"\n            else\n                git pull\n            fi\n        else\n            log \"AUTO_UPDATE disabled.\"\n        fi\n\n    elif [[ -n \"$(find . -mindepth 1 -maxdepth 1 -print -quit)\" ]]; then\n        log \"Server directory is not empty.\"\n        log \"Skipping Git clone to protect existing files.\"\n\n    else\n        log \"Cloning repository...\"\n\n        if [[ -n \"${BRANCH:-}\" ]]; then\n            git clone --single-branch --branch \"$BRANCH\" \"$REPO_URL\" .\n        else\n            git clone \"$REPO_URL\" .\n        fi\n    fi\nfi\n\nif [[ ! -f package.json ]]; then\n    log \"No package.json found.\"\n    log \"Nothing to install.\"\n    exit 0\nfi\n\nPACKAGE_MANAGER=\"$(node -e '\ntry {\n    const pkg = require(\"./package.json\");\n    process.stdout.write(pkg.packageManager || \"\");\n} catch {\n    process.stdout.write(\"\");\n}\n')\"\n\nlog \"Node.js: $(node --version)\"\nlog \"npm: $(npm --version)\"\n\nif [[ -n \"$PACKAGE_MANAGER\" ]]; then\n    log \"packageManager: $PACKAGE_MANAGER\"\nelse\n    log \"packageManager: not specified\"\nfi\n\ninstall_npm() {\n    if [[ -f package-lock.json ]]; then\n        log \"package-lock.json detected.\"\n        log \"Running npm ci...\"\n        npm ci\n    else\n        log \"No package-lock.json detected.\"\n        log \"Running npm install...\"\n        npm install\n    fi\n}\n\ninstall_pnpm() {\n    if [[ -f pnpm-lock.yaml ]]; then\n        log \"pnpm-lock.yaml detected.\"\n        log \"Running pnpm install --frozen-lockfile...\"\n        corepack pnpm install --frozen-lockfile\n    else\n        log \"No pnpm lockfile detected.\"\n        log \"Running pnpm install...\"\n        corepack pnpm install\n    fi\n\n    log \"Rebuilding native dependencies...\"\n    corepack pnpm rebuild\n}\n\ninstall_yarn() {\n    YARN_VERSION=\"$(corepack yarn --version)\"\n    log \"Yarn version: $YARN_VERSION\"\n\n    if [[ \"$YARN_VERSION\" == 1.* ]]; then\n        if [[ -f yarn.lock ]]; then\n            log \"Yarn 1 lockfile detected.\"\n            log \"Running yarn install --frozen-lockfile...\"\n            corepack yarn install --frozen-lockfile\n        else\n            log \"Running yarn install...\"\n            corepack yarn install\n        fi\n    else\n        if [[ -f yarn.lock ]]; then\n            log \"Modern Yarn lockfile detected.\"\n            log \"Running yarn install --immutable...\"\n            corepack yarn install --immutable\n        else\n            log \"Running yarn install...\"\n            corepack yarn install\n        fi\n    fi\n}\n\nif [[ -n \"$PACKAGE_MANAGER\" ]]; then\n    case \"$PACKAGE_MANAGER\" in\n        npm@*)\n            log \"Package manager selected: npm\"\n            install_npm\n            ;;\n        pnpm@*)\n            log \"Package manager selected: pnpm\"\n            install_pnpm\n            ;;\n        yarn@*)\n            log \"Package manager selected: yarn\"\n            install_yarn\n            ;;\n        *)\n            fail \"Unsupported packageManager: $PACKAGE_MANAGER\"\n            ;;\n    esac\nelif [[ -f package-lock.json ]]; then\n    log \"Detected package-lock.json.\"\n    install_npm\nelif [[ -f pnpm-lock.yaml ]]; then\n    log \"Detected pnpm-lock.yaml.\"\n    install_pnpm\nelif [[ -f yarn.lock ]]; then\n    log \"Detected yarn.lock.\"\n    install_yarn\nelse\n    log \"No package manager or lockfile detected.\"\n    log \"Falling back to npm.\"\n    npm install\nfi\n\necho\necho \"========================================\"\necho \" Installation complete\"\necho \"========================================\"\necho\n\nlog \"Node.js: $(node --version)\"\nlog \"npm: $(npm --version)\"\nlog \"All dependencies installed successfully.\"\n",
+      "container": "ghcr.io/console-x1/pterodactyl-node:20-test",
+      "entrypoint": "bash"
+    }
+  },
+  "variables": [
+    {
+      "name": "Startup Command",
+      "description": "Command used to start the Node.js application. Dependencies are installed during server installation.",
+      "env_variable": "STARTUP_CMD",
+      "default_value": "node .",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|max:256",
+      "field_type": "text"
+    },
+    {
+      "name": "Git Repository Address",
+      "description": "Optional Git repository to clone during installation.",
+      "env_variable": "GIT_ADDRESS",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Install Branch",
+      "description": "Optional Git branch to clone.",
+      "env_variable": "BRANCH",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Auto Update",
+      "description": "When enabled, update an existing Git repository during installation.",
+      "env_variable": "AUTO_UPDATE",
+      "default_value": "0",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|boolean",
+      "field_type": "text"
+    },
+    {
+      "name": "User Uploaded Files",
+      "description": "Set to 1 to skip Git and dependency installation.",
+      "env_variable": "USER_UPLOAD",
+      "default_value": "0",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|boolean",
+      "field_type": "text"
+    },
+    {
+      "name": "Git Username",
+      "description": "Optional Git username for private repositories.",
+      "env_variable": "GIT_USERNAME",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Git Access Token",
+      "description": "Optional Git access token for private repositories.",
+      "env_variable": "GIT_TOKEN",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    }
+  ]
+}
