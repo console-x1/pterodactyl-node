@@ -1,0 +1,54 @@
+{
+    "_comment": "Pterodactyl Node.js Universal Egg v1.1",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-08-24T23:48:00+02:00",
+    "name": "Node.js Universal v1.1",
+    "author": "consolex1@consolex1.com",
+    "description": "Universal Node.js egg optimized for fast installation. Supports npm, pnpm and Yarn with automatic package manager detection and lockfile-aware installs.",
+    "features": [],
+    "docker_images": {
+        "Node.js 20": "ghcr.io/console-x1/pterodactyl-node:20-test",
+        "Node.js 22": "ghcr.io/console-x1/pterodactyl-node:22-test",
+        "Node.js 26": "ghcr.io/console-x1/pterodactyl-node:26-test"
+    },
+    "file_denylist": [],
+    "startup": "{{STARTUP_CMD}} {{SECOND_CMD}}",
+    "config": {
+        "files": "{}",
+        "startup": "{\n    \"done\": \"\",\n    \"userInteraction\": []\n}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/bash\nset -e\n\ncd /mnt/server\n\necho \"========================================\"\necho \" Node.js Universal Installer v1.1\"\necho \"========================================\"\n\necho \"\"\necho \"[NodeJS] Node.js: $(node --version)\"\necho \"[NodeJS] npm: $(npm --version)\"\n\nif [ ! -f package.json ]; then\n    echo \"[NodeJS] No package.json found. Skipping dependency installation.\"\n    exit 0\nfi\n\nPACKAGE_MANAGER=\"\"\nPACKAGE_MANAGER_VERSION=\"\"\n\nif node -e \"const p=require('./package.json'); process.exit(p.packageManager && p.packageManager.startsWith('pnpm@') ? 0 : 1)\"; then\n    PACKAGE_MANAGER=\"pnpm\"\n    PACKAGE_MANAGER_VERSION=$(node -p \"require('./package.json').packageManager.split('@')[1]\")\nelif node -e \"const p=require('./package.json'); process.exit(p.packageManager && p.packageManager.startsWith('yarn@') ? 0 : 1)\"; then\n    PACKAGE_MANAGER=\"yarn\"\n    PACKAGE_MANAGER_VERSION=$(node -p \"require('./package.json').packageManager.split('@')[1]\")\nelif [ -f pnpm-lock.yaml ]; then\n    PACKAGE_MANAGER=\"pnpm\"\nelif [ -f yarn.lock ]; then\n    PACKAGE_MANAGER=\"yarn\"\nelif [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then\n    PACKAGE_MANAGER=\"npm\"\nelse\n    PACKAGE_MANAGER=\"npm\"\nfi\n\necho \"[NodeJS] Package manager selected: ${PACKAGE_MANAGER}\"\n\nif [ -n \"${PACKAGE_MANAGER_VERSION}\" ]; then\n    echo \"[NodeJS] Requested version: ${PACKAGE_MANAGER_VERSION}\"\nfi\n\ncase \"${PACKAGE_MANAGER}\" in\n    pnpm)\n        if [ -n \"${PACKAGE_MANAGER_VERSION}\" ]; then\n            corepack prepare \"pnpm@${PACKAGE_MANAGER_VERSION}\" --activate\n        fi\n\n        if [ -f pnpm-lock.yaml ]; then\n            echo \"[NodeJS] pnpm-lock.yaml detected.\"\n            echo \"[NodeJS] Running pnpm install --frozen-lockfile...\"\n            corepack pnpm install --frozen-lockfile\n        else\n            echo \"[NodeJS] No pnpm lockfile detected.\"\n            echo \"[NodeJS] Running pnpm install...\"\n            corepack pnpm install\n        fi\n\n        echo \"[NodeJS] Rebuilding native dependencies...\"\n        corepack pnpm rebuild || true\n        ;;\n\n    yarn)\n        if [ -n \"${PACKAGE_MANAGER_VERSION}\" ]; then\n            corepack prepare \"yarn@${PACKAGE_MANAGER_VERSION}\" --activate\n        fi\n\n        if [[ \"${PACKAGE_MANAGER_VERSION}\" == 4.* || \"${PACKAGE_MANAGER_VERSION}\" == 3.* || \"${PACKAGE_MANAGER_VERSION}\" == 2.* ]]; then\n            echo \"[NodeJS] Yarn Berry detected.\"\n            echo \"[NodeJS] Running yarn install --immutable...\"\n            corepack yarn install --immutable\n        elif [ -f yarn.lock ]; then\n            echo \"[NodeJS] yarn.lock detected.\"\n            echo \"[NodeJS] Running yarn install --frozen-lockfile...\"\n            corepack yarn install --frozen-lockfile\n        else\n            echo \"[NodeJS] No Yarn lockfile detected.\"\n            echo \"[NodeJS] Running yarn install...\"\n            corepack yarn install\n        fi\n        ;;\n\n    npm)\n        if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then\n            echo \"[NodeJS] npm lockfile detected.\"\n            echo \"[NodeJS] Running npm ci...\"\n            npm ci\n        else\n            echo \"[NodeJS] No npm lockfile detected.\"\n            echo \"[NodeJS] Running npm install...\"\n            npm install\n        fi\n        ;;\n\n    *)\n        echo \"[NodeJS] ERROR: Unsupported package manager: ${PACKAGE_MANAGER}\"\n        exit 1\n        ;;\nesac\n\necho \"\"\necho \"========================================\"\necho \" Installation complete\"\necho \"========================================\"\necho \"\"\necho \"[NodeJS] Node.js: $(node --version)\"\necho \"[NodeJS] npm: $(npm --version)\"\necho \"\"\necho \"[NodeJS] All dependencies installed successfully.\"\n",
+            "container": "alpine:3.20",
+            "entrypoint": "sh"
+        }
+    },
+    "variables": [
+        {
+            "name": "Startup Command",
+            "description": "Command used to start the Node.js application after installation.",
+            "env_variable": "STARTUP_CMD",
+            "default_value": "node .",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "Second Startup Command",
+            "description": "Optional command or arguments appended to the startup command.",
+            "env_variable": "SECOND_CMD",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        }
+    ]
+}
