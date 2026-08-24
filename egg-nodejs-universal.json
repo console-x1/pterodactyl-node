@@ -10,9 +10,9 @@
     "description": "Universal Node.js egg optimized for fast installation. Supports npm, pnpm and Yarn with automatic package manager detection and lockfile-aware installs.",
     "features": [],
     "docker_images": {
-        "Node.js 20": "ghcr.io/console-x1/pterodactyl-node:20-test",
-        "Node.js 22": "ghcr.io/console-x1/pterodactyl-node:22-test",
-        "Node.js 26": "ghcr.io/console-x1/pterodactyl-node:26-test"
+        "Node.js 20": "ghcr.io/console-x1/pterodactyl-node:20",
+        "Node.js 22": "ghcr.io/console-x1/pterodactyl-node:22",
+        "Node.js 26": "ghcr.io/console-x1/pterodactyl-node:26"
     },
     "file_denylist": [],
     "startup": "{{STARTUP_CMD}} {{SECOND_CMD}}",

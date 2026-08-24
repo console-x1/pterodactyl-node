@@ -36,13 +36,16 @@ RUN apt-get update \
 
 RUN corepack enable
 
-RUN mkdir -p /home/container \
-    && chown -R node:node /home/container
+RUN useradd -m -d /home/container -s /bin/bash container \
+    && mkdir -p /home/container \
+    && chown -R container:container /home/container
 
-USER node
+ENV USER=container
+ENV HOME=/home/container
 
 WORKDIR /home/container
 
-ENTRYPOINT ["/usr/bin/tini", "--"]
+COPY docker/node/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-CMD ["bash"]
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
