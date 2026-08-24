@@ -9,7 +9,6 @@ LABEL org.opencontainers.image.title="Pterodactyl Node.js"
 LABEL org.opencontainers.image.description="Production Node.js runtime for Pterodactyl"
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    NODE_ENV=production \
     COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
     npm_config_update_notifier=false \
     npm_config_fund=false \
@@ -48,6 +47,6 @@ USER node
 
 WORKDIR /home/container
 
-ENTRYPOINT ["/usr/bin/tini", "--"]
+# ENTRYPOINT ["/usr/bin/tini", "--"]
 
-CMD ["bash"]
+# CMD ["bash"]
