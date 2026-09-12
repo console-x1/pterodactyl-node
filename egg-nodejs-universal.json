@@ -15,7 +15,7 @@
         "Node.js 26": "ghcr.io/console-x1/pterodactyl-node:26"
     },
     "file_denylist": [],
-    "startup": "{{STARTUP_CMD}} {{SECOND_CMD}}",
+    "startup": "{{STARTUP_CMD}} && {{SECOND_CMD}}",
     "config": {
         "files": "{}",
         "startup": "{\n    \"done\": \"\",\n    \"userInteraction\": []\n}",
@@ -34,7 +34,7 @@
             "name": "Startup Command",
             "description": "Command used to start the Node.js application after installation.",
             "env_variable": "STARTUP_CMD",
-            "default_value": "node .",
+            "default_value": "npm install",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string|max:256",
@@ -44,7 +44,7 @@
             "name": "Second Startup Command",
             "description": "Optional command or arguments appended to the startup command.",
             "env_variable": "SECOND_CMD",
-            "default_value": "",
+            "default_value": "node .",
             "user_viewable": true,
             "user_editable": true,
             "rules": "nullable|string|max:256",
