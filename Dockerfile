@@ -34,7 +34,7 @@ RUN apt-get update \
         netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable
+RUN npm install -g corepack@latest && corepack enable
 
 RUN useradd -m -d /home/container -s /bin/bash container \
     && mkdir -p /home/container \
