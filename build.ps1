@@ -1,19 +1,21 @@
-$ErrorActionPreference = "Stop"
-
-$versions = @(
-    20,
-    22,
-    26
+param(
+    [int[]]$Versions = @(14, 16, 18, 20, 22, 24, 26)
 )
 
+$ErrorActionPreference = "Stop"
+
 $variants = @{
+    "14" = "bullseye"
+    "16" = "bookworm"
+    "18" = "bookworm"
     "20" = "trixie"
     "22" = "trixie"
+    "24" = "trixie"
     "26" = "trixie"
 }
 
-foreach ($version in $versions) {
-    $variant = $variants["$version"]
+foreach ($version in $Versions) {
+    $variant = if ($variants.ContainsKey("$version")) { $variants["$version"] } else { "trixie" }
     $tag = "pterodactyl-node:$version"
 
     Write-Host ""

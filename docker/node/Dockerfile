@@ -11,11 +11,14 @@ LABEL org.opencontainers.image.description="Production Node.js runtime for Ptero
 ENV DEBIAN_FRONTEND=noninteractive \
     NODE_ENV=production \
     COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+    COREPACK_INTEGRITY_KEYS=0 \
     npm_config_update_notifier=false \
     npm_config_fund=false \
     npm_config_audit=false
 
-WORKDIR /home/container
+RUN if grep -q bullseye /etc/os-release; then \
+    sed -i 's|deb.debian.org|archive.debian.org|g; /security.debian.org/d; /bullseye-updates/d' /etc/apt/sources.list; \
+    fi
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -34,18 +37,19 @@ RUN apt-get update \
         netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g corepack@latest && corepack enable
+RUN NODE_MAJOR="$(node -p "process.versions.node.split('.')[0]")" \
+    && if [ "$NODE_MAJOR" -ge 20 ]; then npm install -g corepack@latest; fi \
+    && (corepack enable || true)
 
 RUN useradd -m -d /home/container -s /bin/bash container \
     && mkdir -p /home/container \
     && chown -R container:container /home/container
 
-ENV USER=container
-ENV HOME=/home/container
+COPY docker/node/entrypoint.sh /entrypoint.sh
 
+USER container
+ENV USER=container \
+    HOME=/home/container
 WORKDIR /home/container
 
-COPY docker/node/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/tini", "-g", "--", "/bin/bash", "/entrypoint.sh"]
