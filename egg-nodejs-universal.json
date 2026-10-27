@@ -7,7 +7,7 @@
     "exported_at": "2026-08-24T23:48:00+02:00",
     "name": "Node.js Universal v1.1",
     "author": "consolex1@consolex1.com",
-    "description": "Universal Node.js egg optimized for fast installation. Supports npm, pnpm and Yarn with automatic package manager detection and lockfile-aware installs.",
+    "description": "Universal Node.js egg with JIT-less mode enabled by default to reduce memory usage. Supports npm, pnpm and Yarn with automatic package manager detection and lockfile-aware installs.",
     "features": [],
     "docker_images": {
         "Node.js 26": "ghcr.io/console-x1/pterodactyl-node:26",
@@ -52,6 +52,16 @@
             "user_viewable": true,
             "user_editable": true,
             "rules": "nullable|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "Enable JIT-less mode",
+            "description": "Reduces V8 memory usage by disabling JIT compilation. This can slow down CPU-intensive applications, including those started with tsx. Set to false to restore normal JIT behavior.",
+            "env_variable": "NODE_JITLESS",
+            "default_value": "true",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:true,false",
             "field_type": "text"
         }
     ]
