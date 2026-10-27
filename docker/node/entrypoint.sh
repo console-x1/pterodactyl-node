@@ -2,19 +2,19 @@
 
 cd /home/container || exit 1
 
-case "${NODE_JITLESS:-true}" in
-    true)
+case "${NODE_JITLESS:-1}" in
+    1)
         case " ${NODE_OPTIONS:-} " in
             *" --jitless "*) ;;
             *) export NODE_OPTIONS="${NODE_OPTIONS:+${NODE_OPTIONS} }--jitless" ;;
         esac
         echo "[NodeJS] V8 JIT-less mode enabled."
         ;;
-    false)
+    0)
         echo "[NodeJS] V8 JIT-less mode disabled."
         ;;
     *)
-        echo "[NodeJS] ERROR: NODE_JITLESS must be true or false (got '${NODE_JITLESS}')." >&2
+        echo "[NodeJS] ERROR: NODE_JITLESS must be 1 or 0 (got '${NODE_JITLESS}')." >&2
         exit 1
         ;;
 esac

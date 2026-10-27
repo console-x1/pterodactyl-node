@@ -56,12 +56,12 @@
         },
         {
             "name": "Enable JIT-less mode",
-            "description": "Reduces V8 memory usage by disabling JIT compilation. This can slow down CPU-intensive applications, including those started with tsx. Set to false to restore normal JIT behavior.",
+            "description": "Reduces V8 memory usage by disabling JIT compilation. This can slow down CPU-intensive applications, including those started with tsx. Set to 0 to restore normal JIT behavior.",
             "env_variable": "NODE_JITLESS",
-            "default_value": "true",
+            "default_value": "1",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|in:true,false",
+            "rules": "required|in:0,1",
             "field_type": "text"
         }
     ]
